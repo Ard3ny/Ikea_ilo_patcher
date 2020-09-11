@@ -30,11 +30,11 @@ for ls in cmds_ls_of_repo:
     while not channel.recv_ready(): #Wait for the server to read and respond
         time.sleep(0.5)
     time.sleep(0.1) #wait enough for writing to (hopefully) be finished
-    lf_of_repo = channel.recv(9999) #read invoke_shell
-    string_of_ls_of_repo= str(lf_of_repo.decode('utf-8'))               #makes string of recieve from console
+    ls_of_repo = channel.recv(9999) #read invoke_shell
+    string_of_ls_of_repo= str(ls_of_repo.decode('utf-8'))               #makes string of recieve from console
     time.sleep(0.5)
 
-
+#print ('test1' + string_of_ls_of_repo)
 
 
 #string_of_ls_of_repo of all servers
@@ -42,7 +42,8 @@ pattern = re.compile(r'..\d\d\d')
 matches = pattern.findall(string_of_ls_of_repo)
 stringofmatches = str(matches)
 for match in matches:
-
+    #channel.close()
+    #print('test3' + match)
     client = paramiko.SSHClient()                                                   #again connects to repo server so it can get another ip from cat of next server
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostrepo, username=usernamerepo, password=passwordrepo)
@@ -53,15 +54,15 @@ for match in matches:
     channel.send("\n")
     time.sleep(1)
     
-    cmd_cat_of_server = ["""cat /root/config/%(match)s""" % locals()]                               #cat of server config file so i can get his ILO IP adress
+    cmd_cat_of_server = ["""sudo cat /root/config/%(match)s""" % locals()]                               #cat of server config file so i can get his ILO IP adress
     for cat in cmd_cat_of_server:
         channel.send(cat + "\n")
         while not channel.recv_ready():
-            time.sleep(0.5)
-        time.sleep(0.1) 
+            time.sleep(1)
+        time.sleep(1) 
         cat_of_repo = channel.recv(9999) #read invoke_shell
-        string_of_cat_of_repo= str(cat_of_repo.decode('utf-8'))         
-        print (string_of_cat_of_repo)
+        string_of_cat_of_repo= str(cat_of_repo.decode(encoding='utf-8', errors='ignore'))         
+        #print (string_of_cat_of_repo)
         time.sleep(0.5)
 
                                                                 #ILO_IPADDR="10.28.108.17"
@@ -76,7 +77,7 @@ for match in matches:
         hostofserver = sliceofstringofmatches2                                                              #ip address taken from repo server           
         usernameserver = 'cio_ad_bx'          #cio_ad_bx    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! when testing 'root'                                                   
         passwordserver = 'ILOikea2015'          #cio ad bx password !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! when testing 'aaa'
-        print ('You are connected to  ' + hostofserver)
+        print('You are connected to  ' + hostofserver + ' with name ' + match)
 
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -94,10 +95,10 @@ for match in matches:
         channel.send(catt + "\n")
         while not channel.recv_ready():
             time.sleep(2)
-        time.sleep(0.1) #
+        time.sleep(5) #
         cat_of_server = channel.recv(9999) 
         string_of_cat_of_server= str(cat_of_server.decode('utf-8'))
-        #print (string_of_cat_of_server)                                #whole output of show/map1/firmware1, we only need the firmware line    
+        #print ('test 1 ' + string_of_cat_of_server)                                #whole output of show/map1/firmware1, we only need the firmware line    
         time.sleep(0.5)
 
 
@@ -106,10 +107,10 @@ for match in matches:
     matches3 = pattern3.findall(string_of_cat_of_server)
     stringofmatches3 = str(matches3)
     firmware_version = stringofmatches3[7:-2]               #output iLO 4
-                        
+    #print('test 2 ' + firmware_version)                   
 
     if firmware_version == 'iLO 4':                              #function for what to do if ilo 4 or ilo 5                     
-        print ('Uhadlo spravne ze to je ilo 4')                                                                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #print ('Uhadlo spravne ze to je ilo 4')                                                                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         #cmds_load_of_server = ["""touch /tmp/fungujeto4"""]
         cmds_load_of_server = ["""load /map1/firmware1 -source http://10.60.215.27/pub/iso/ilo_firmwares/ilo4_275.bin"""]   
         for load in cmds_load_of_server:
@@ -119,11 +120,11 @@ for match in matches:
             load_of_server = channel.recv(9999) 
             string_of_load_of_server= str(load_of_server.decode('utf-8'))
             print (string_of_load_of_server)
-            print (firmware_version + ' of server ' + match + " was successfully patched")              
+            print (firmware_version + ' of server ' + match + " was successfully patched with version " + firmware_version)              
             time.sleep(0.5)
 
     elif firmware_version == 'iLO 5':
-        print ('Uhadlo spravne ze to je ilo 5')                                                                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       # print ('Uhadlo spravne ze to je ilo 5')                                                                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         #cmds_load_of_server = ["""touch /tmp/fungujeto5"""]
         cmds_load_of_server = ["""load /map1/firmware1 -source http://10.60.215.27/pub/iso/ilo_firmwares/ilo5_230.bin"""]   
         for load in cmds_load_of_server:
@@ -133,7 +134,7 @@ for match in matches:
             load_of_server = channel.recv(9999) 
             string_of_load_of_server= str(load_of_server.decode('utf-8'))
             print (string_of_load_of_server)
-            print (firmware_version + ' of server ' + match + " was successfully patched")              
+            print (firmware_version + ' of server ' + match + " was successfully patched with version " + firmware_version)              
             time.sleep(0.5)
             channel.close()
     
